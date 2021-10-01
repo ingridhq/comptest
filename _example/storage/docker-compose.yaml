@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  storage-emulator:
+    image: oittaa/gcp-storage-emulator:v2021.06.30
+    ports:
+      - 8086:8086
+    command: start --port 8086 --default-bucket ${STORAGE_BUCKET} --in-memory

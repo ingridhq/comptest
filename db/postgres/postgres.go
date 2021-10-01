@@ -72,7 +72,7 @@ func (c database) CreateDatabase(ctx context.Context) error {
 	}
 	err = db.GetContext(ctx, &dbExist{}, fmt.Sprintf("SELECT datname FROM pg_catalog.pg_database WHERE datname='%v';", dbname))
 
-	// TODO refactor that
+	// Database exists when no errors.
 	if err == nil {
 		return nil
 	}
@@ -86,6 +86,7 @@ func (c database) CreateDatabase(ctx context.Context) error {
 		}
 	}
 
+	// In postgres there is no CREATE DATABASE IF NOT EXISTS query
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %v;", dbname))
 	if err != nil {
 		return err

@@ -52,7 +52,7 @@ func (c database) CreateDatabase(ctx context.Context, dsn string) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to database %q : %w", c.dsn, err)
 	}
-	_, err = db.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbname))
+	_, err = db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS ?", dbname)
 	if err != nil {
 		return fmt.Errorf("failed to create database %q: %w", dbname, err)
 	}

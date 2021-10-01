@@ -8,7 +8,7 @@ import (
 	"cloud.google.com/go/pubsub"
 )
 
-func NewSubscription(ctx context.Context, projectID, topicID, subscriptionID string) (*pubsub.Subscription, error) {
+func newSubscription(ctx context.Context, projectID, topicID, subscriptionID string) (*pubsub.Subscription, error) {
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Failed to create client for project %q: %v", projectID, err)
@@ -29,22 +29,6 @@ func NewSubscription(ctx context.Context, projectID, topicID, subscriptionID str
 	}
 
 	return subscription, nil
-}
-
-func NewTopic(ctx context.Context, projectID, topic string) (*pubsub.Topic, error) {
-	c, err := pubsub.NewClient(ctx, projectID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create pubsub client: %w", err)
-	}
-	t := c.Topic(topic)
-	ok, err := t.Exists(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check if topic exists: %w", err)
-	}
-	if !ok {
-		return nil, fmt.Errorf("topic %q does not exists", topic)
-	}
-	return t, nil
 }
 
 func ensureTopic(ctx context.Context, cli *pubsub.Client, topicID string) (*pubsub.Topic, error) {
