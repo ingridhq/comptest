@@ -4,6 +4,11 @@
 
 The package aims to make component testing easier by providing a set of helper functions.
 
+
+## Examples
+
+You can run all examples with `make -s`
+
 ---
 
 You can read more about component testing here:
