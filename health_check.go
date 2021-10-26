@@ -87,7 +87,7 @@ func newExponentialBackOff(ctx context.Context) backoff.BackOffContext {
 
 func WaitForMainServer(ctx context.Context) error {
 	mainHealthCheck := HTTPHealthCheck{
-		Addr: fmt.Sprintf("http://localhost%s/readiness", os.Getenv("METRICS_ADDR")),
+		Addr: fmt.Sprintf("http://%s/readiness", os.Getenv("METRICS_ADDR")),
 	}
 	if err := WaitForAll(ctx, mainHealthCheck); err != nil {
 		return err

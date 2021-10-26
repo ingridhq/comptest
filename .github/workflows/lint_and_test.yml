@@ -20,6 +20,7 @@ jobs:
           version: latest
           args: --exclude "SA1019"
   docker:
+    name: run examples
     needs: golangci
     timeout-minutes: 5
     runs-on: ubuntu-20.04
