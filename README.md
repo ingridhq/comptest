@@ -8,7 +8,7 @@ The package aims to make component testing easier by providing a set of helper f
 - Inject migrations with seed data
 - Run migrations up and down
 - Wait for database, mocks and main service to be ready
-- Prepare and use gcp pubsub. Sends messages to pubsub.
+- Prepare and use gcp pubsub. Send messages to pubsub.
 
 ## Quickstart
 
@@ -44,7 +44,7 @@ func Test_response(t *testing.T) {
 }
 ```
 
-Full examples can be found in `_example` directory. You will learn there how to use most of package functionality there. You can run all examples with `make -s` or one by one by calling `make -s` in each subdirectory.
+Full examples can be found in `_example` directory. There you will learn how to use most of the package's functionality. You can run all examples with `make -s` or one by one by calling `make -s` in each subdirectory.
 
 ---
 
