@@ -82,7 +82,8 @@ func MustBuildBinary(pathToGoMain string, pathToBinary string) {
 	}
 }
 
-// MustBuildAndRun will build and run golang app in a background. Returns clean function
+// MustBuildAndRun will build and run golang app in a background.
+// Returns clean function that should be deferred.
 func MustBuildAndRun(pathToGoMain, pathToBinary, pathToLogs string) func() {
 	MustBuildBinary(pathToGoMain, pathToBinary)
 	return MustRunBinary(pathToBinary, pathToLogs)
