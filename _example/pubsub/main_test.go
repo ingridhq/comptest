@@ -33,10 +33,10 @@ func TestMain(t *testing.M) {
 	envconfig.MustProcess("", &cfg)
 
 	ctx := context.Background()
-	sender := ctpubsub.MustSetupPubSubTopic(ctx, cfg.PubSubProjectID, cfg.PubSubTopic, cfg.PubSubSubscription)
+	sender := ctpubsub.MustSetupTopic(ctx, cfg.PubSubProjectID, cfg.PubSubTopic, cfg.PubSubSubscription)
 
 	receiver := make(chan *pubsub.Message)
-	ctpubsub.MustSetupPubSubSubscription(
+	ctpubsub.MustSetupSubscription(
 		ctx,
 		cfg.PubSubProjectID,
 		cfg.PubSubTopic,
