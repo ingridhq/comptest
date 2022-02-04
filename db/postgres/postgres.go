@@ -10,13 +10,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/ingridhq/comptest"
 	"github.com/ingridhq/comptest/db/dbutil"
 )
 
 const schema = "postgres"
-
-var _ comptest.HealthCheck = database{}
 
 type database struct {
 	dsn string
@@ -27,10 +24,14 @@ func Database(dsn string) *database {
 }
 
 func (c database) Check(ctx context.Context) error {
-	db, err := sqlx.ConnectContext(ctx, schema, prepareDSN(c.dsn))
+	conninfo, _ := dbutil.SplitDSN(c.dsn)
+	conninfo = fmt.Sprintf("%s/postgres?sslmode=disable", conninfo)
+
+	db, err := sqlx.ConnectContext(ctx, schema, prepareDSN(conninfo))
 	if err != nil {
 		return fmt.Errorf("failed to connect to DB: %w", err)
 	}
+
 	db.Close()
 	return nil
 }
@@ -50,16 +51,9 @@ func prepareDSN(dsn string) string {
 	return fmt.Sprintf("%s://%s", schema, dsn)
 }
 
-// CreateDatabase will wait for db connection. You don't have to use WaitForAll() before CreateDatabase()
 func (c database) CreateDatabase(ctx context.Context) error {
 	conninfo, dbname := dbutil.SplitDSN(c.dsn)
 	conninfo = fmt.Sprintf("%s/postgres?sslmode=disable", conninfo)
-
-	// Wait for postgres database
-	postgresDB := Database(conninfo)
-	if err := comptest.WaitForAll(ctx, postgresDB); err != nil {
-		return err
-	}
 
 	// Connect to postgres database, to create new db. Sqlx require connection to database.
 	db, err := sqlx.ConnectContext(ctx, schema, conninfo)

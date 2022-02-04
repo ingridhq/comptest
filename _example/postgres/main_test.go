@@ -11,6 +11,8 @@ import (
 
 	"github.com/ingridhq/comptest"
 	"github.com/ingridhq/comptest/db/postgres"
+
+		ctpubsub "github.com/ingridhq/comptest/pubsub"
 )
 
 type config struct {
@@ -24,10 +26,6 @@ func TestMain(t *testing.M) {
 
 	var cfg config
 	envconfig.MustProcess("", &cfg)
-
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
 
 	postgresDB := postgres.Database(cfg.DBPostgresDSN)
 	if err := postgresDB.CreateDatabase(ctx); err != nil {
