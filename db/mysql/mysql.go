@@ -42,16 +42,18 @@ func (c database) RunDownMigrations(migrationsSource string) error {
 
 // CreateDatabase will wait for db connection. You don't have to use WaitForAll() before CreateDatabase()
 func (c database) CreateDatabase(ctx context.Context, dsn string) error {
-	_, dbname := dbutil.SplitDSN(dsn)
+	dbbase, dbname := dbutil.SplitDSN(dsn)
 
 	if err := comptest.WaitForAll(ctx, c); err != nil {
 		return err
 	}
 
-	db, err := sqlx.ConnectContext(ctx, "mysql", c.dsn)
+	db, err := sqlx.ConnectContext(ctx, "mysql", dbbase+"/")
 	if err != nil {
 		return fmt.Errorf("failed to connect to database %q : %w", c.dsn, err)
 	}
+	defer db.Close()
+
 	_, err = db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS ?", dbname)
 	if err != nil {
 		return fmt.Errorf("failed to create database %q: %w", dbname, err)

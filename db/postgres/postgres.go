@@ -66,6 +66,7 @@ func (c database) CreateDatabase(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	type dbExist struct {
 		Datname string `db:"datname"`
