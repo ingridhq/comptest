@@ -47,8 +47,11 @@ func TestMain(t *testing.M) {
 
 	envconfig.MustProcess("", &cfg)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	// Initialize comptest lib.
-	c := comptest.New()
+	c := comptest.New(ctx)
 
 	postgresDB := cppostgres.Database(cfg.DBPostgresDSN)
 
@@ -58,7 +61,7 @@ func TestMain(t *testing.M) {
 	)
 
 	// Setting up all dependencies needed in tests...
-	if err := postgresDB.CreateDatabase(context.Background()); err != nil {
+	if err := postgresDB.CreateDatabase(ctx); err != nil {
 		log.Fatalf("could not create database: %v", err)
 	}
 
@@ -69,11 +72,11 @@ func TestMain(t *testing.M) {
 		log.Fatalf("Failed to run up migration: %v", err)
 	}
 
-	sender := ctpubsub.MustSetupTopic(context.Background(), cfg.PubSubProjectID, cfg.PubSubTopicReceived, cfg.PubSubSubscriptionReceived)
-	ctpubsub.MustSetupTopic(context.Background(), cfg.PubSubProjectID, cfg.PubSubTopicSend, cfg.PubSubSubscriptionSend)
+	sender := ctpubsub.MustSetupTopic(ctx, cfg.PubSubProjectID, cfg.PubSubTopicReceived, cfg.PubSubSubscriptionReceived)
+	ctpubsub.MustSetupTopic(ctx, cfg.PubSubProjectID, cfg.PubSubTopicSend, cfg.PubSubSubscriptionSend)
 
 	receiver := make(chan *pubsub.Message)
-	ctpubsub.MustSetupSubscription(context.Background(), cfg.PubSubProjectID, cfg.PubSubTopicSend, cfg.PubSubSubscriptionSend,
+	ctpubsub.MustSetupSubscription(ctx, cfg.PubSubProjectID, cfg.PubSubTopicSend, cfg.PubSubSubscriptionSend,
 		func(ctx context.Context, message *pubsub.Message) {
 			receiver <- message
 		},
