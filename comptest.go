@@ -28,6 +28,7 @@ type comptest struct {
 	logsPath   string
 }
 
+// New create new comptests suite.
 func New(m *testing.M) *comptest {
 	return &comptest{
 		m:          m,
@@ -37,18 +38,22 @@ func New(m *testing.M) *comptest {
 	}
 }
 
+// Build specifies main Go file to build.
 func (c *comptest) Build(buildPath string) {
 	c.buildPath = buildPath
 }
 
+// Wait adds check to perform before running tests.
 func (c *comptest) Wait(checks ...checker) {
 	c.checks = append(c.checks, checks...)
 }
 
+// BeforeRun sets action to perform before tests.
 func (c *comptest) BeforeRun(fn func() error) {
 	c.beforeRun = append(c.beforeRun, fn)
 }
 
+// Run builds, checks requirements and runs binary and tests.
 func (c *comptest) Run(ctx context.Context) error {
 	if c.buildPath == "" {
 		return fmt.Errorf("call to Build is required")
