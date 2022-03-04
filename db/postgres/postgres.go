@@ -23,6 +23,10 @@ func Database(dsn string) *database {
 	return &database{dsn: dsn}
 }
 
+func (c database) String() string {
+	return fmt.Sprintf("[Postgresql: %s]", c.dsn)
+}
+
 // Check implements checker interface for convenient use in HealthChecks function.
 func (c database) Check(ctx context.Context) error {
 	conninfo, _ := dbutil.SplitDSN(c.dsn)

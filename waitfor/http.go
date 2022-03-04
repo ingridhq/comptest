@@ -14,6 +14,10 @@ type httpHealthCheck struct {
 	addr string
 }
 
+func (c httpHealthCheck) String() string {
+	return fmt.Sprintf("[HTTPCheck: %s]", c.addr)
+}
+
 func (c httpHealthCheck) Check(ctx context.Context) error {
 	req, err := http.NewRequest("GET", c.addr, nil)
 	if err != nil {
