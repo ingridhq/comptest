@@ -47,6 +47,7 @@ func TestMain(t *testing.M) {
 
 	envconfig.MustProcess("", &cfg)
 
+	// Initialize comptest lib.
 	c := comptest.New(t)
 
 	postgresDB := cppostgres.Database(cfg.DBPostgresDSN)
@@ -57,7 +58,6 @@ func TestMain(t *testing.M) {
 	)
 
 	// Setting up all dependencies needed in tests...
-
 	if err := postgresDB.CreateDatabase(context.Background()); err != nil {
 		log.Fatalf("could not create database: %v", err)
 	}
@@ -84,6 +84,7 @@ func TestMain(t *testing.M) {
 		Receiver: receiver,
 	}
 
+	// Build, run, wait for service and run tests...
 	c.BuildAndRun("../main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.MetricPort)))
 }
 

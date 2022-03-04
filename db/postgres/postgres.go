@@ -8,9 +8,8 @@ import (
 	"strings"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/jmoiron/sqlx"
-
 	"github.com/ingridhq/comptest/db/dbutil"
+	"github.com/jmoiron/sqlx"
 )
 
 const schema = "postgres"
@@ -19,10 +18,12 @@ type database struct {
 	dsn string
 }
 
+// Database create Postgresql suite for database initialization.
 func Database(dsn string) *database {
 	return &database{dsn: dsn}
 }
 
+// Check implements checker interface for convenient use in HealthChecks function.
 func (c database) Check(ctx context.Context) error {
 	conninfo, _ := dbutil.SplitDSN(c.dsn)
 	conninfo = fmt.Sprintf("%s/postgres?sslmode=disable", conninfo)
@@ -36,10 +37,12 @@ func (c database) Check(ctx context.Context) error {
 	return nil
 }
 
+// RunUpMigrations runs UP migrations from source.
 func (c database) RunUpMigrations(migrationsSource string) error {
 	return dbutil.RunUpMigrations(migrationsSource, prepareDSN(c.dsn))
 }
 
+// RunDownMigrations runs DOWN migrations from source.
 func (c database) RunDownMigrations(migrationsSource string) error {
 	return dbutil.RunDownMigrations(migrationsSource, prepareDSN(c.dsn))
 }
@@ -51,6 +54,7 @@ func prepareDSN(dsn string) string {
 	return fmt.Sprintf("%s://%s", schema, dsn)
 }
 
+// CreateDatabase creates database extracted from DSN.
 func (c database) CreateDatabase(ctx context.Context) error {
 	conninfo, dbname := dbutil.SplitDSN(c.dsn)
 	conninfo = fmt.Sprintf("%s/postgres?sslmode=disable", conninfo)

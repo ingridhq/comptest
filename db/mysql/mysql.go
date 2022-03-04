@@ -15,10 +15,12 @@ type database struct {
 	dsn string
 }
 
+// Database create MySQL suite for database initialization.
 func Database(dsn string) *database {
 	return &database{dsn: dsn}
 }
 
+// Check implements checker interface for convenient use in HealthChecks function.
 func (c database) Check(ctx context.Context) error {
 	db, err := sqlx.ConnectContext(ctx, schema, c.dsn)
 	if err != nil {
@@ -28,14 +30,17 @@ func (c database) Check(ctx context.Context) error {
 	return nil
 }
 
+// RunUpMigrations runs UP migrations from source.
 func (c database) RunUpMigrations(migrationsSource string) error {
 	return dbutil.RunUpMigrations(migrationsSource, fmt.Sprintf("%s://%s", schema, c.dsn))
 }
 
+// RunDownMigrations runs DOWN migrations from source.
 func (c database) RunDownMigrations(migrationsSource string) error {
 	return dbutil.RunDownMigrations(migrationsSource, fmt.Sprintf("%s://%s", schema, c.dsn))
 }
 
+// CreateDatabase creates database extracted from DSN.
 func (c database) CreateDatabase(ctx context.Context, dsn string) error {
 	dbbase, dbname := dbutil.SplitDSN(dsn)
 
