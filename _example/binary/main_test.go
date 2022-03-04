@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -32,6 +31,11 @@ func TestMain(t *testing.M) {
 		return
 	}
 
+	c := comptest.New(t)
+	c.HealthChecks(
+		waitfor.TCP(os.Getenv("PUBSUB_EMULATOR_HOST")),
+	)
+
 	envconfig.MustProcess("", &cfg)
 
 	sender := ctpubsub.MustSetupTopic(context.Background(), cfg.PubSubProjectID, cfg.PubSubTopicReceived, cfg.PubSubSubscriptionReceived)
@@ -48,24 +52,12 @@ func TestMain(t *testing.M) {
 		},
 	)
 
-	c := comptest.New(t)
-	c.Build("./main.go")
-	c.Wait(
-		waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.MetricPort)),
-	)
-
-	c.BeforeRun(func() error {
-		env = Environment{
-			Sender:   sender,
-			Receiver: receiver,
-		}
-
-		return nil
-	})
-
-	if err := c.Run(context.Background()); err != nil {
-		log.Fatal(err)
+	env = Environment{
+		Sender:   sender,
+		Receiver: receiver,
 	}
+
+	c.BuildAndRun("main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.MetricPort)))
 }
 
 func Test_HTTP(t *testing.T) {

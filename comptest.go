@@ -2,7 +2,7 @@ package comptest
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -21,9 +21,6 @@ type comptest struct {
 
 	timeout time.Duration
 
-	checks     []checker
-	beforeRun  []func() error
-	buildPath  string
 	binaryPath string
 	logsPath   string
 }
@@ -38,56 +35,36 @@ func New(m *testing.M) *comptest {
 	}
 }
 
-// Build specifies main Go file to build.
-func (c *comptest) Build(buildPath string) {
-	c.buildPath = buildPath
-}
-
-// Wait adds check to perform before running tests.
-func (c *comptest) Wait(checks ...checker) {
-	c.checks = append(c.checks, checks...)
-}
-
-// BeforeRun sets action to perform before tests.
-func (c *comptest) BeforeRun(fn func() error) {
-	c.beforeRun = append(c.beforeRun, fn)
-}
-
-// Run builds, checks requirements and runs binary and tests.
-func (c *comptest) Run(ctx context.Context) error {
-	if c.buildPath == "" {
-		return fmt.Errorf("call to Build is required")
-	}
-	if len(c.checks) < 1 {
-		return fmt.Errorf("at least one check is required")
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+// HealthChecks waits for external dependencies (PubSubs, Databases, GRPC mocks) to be ready.
+func (c *comptest) HealthChecks(checks ...checker) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
-	if err := binary.BuildBinary(c.buildPath, c.binaryPath); err != nil {
-		return err
+	if err := waitForAll(ctx, checks...); err != nil {
+		log.Fatalf("Failed to check external dependencies: %v", err)
+	}
+}
+
+// BuildAndRun builds, runs binary, waits for readiness check and runs tests.
+func (c *comptest) BuildAndRun(buildPath string, readiness checker) {
+	if err := binary.BuildBinary(buildPath, c.binaryPath); err != nil {
+		log.Fatalf("Failed to build binary: %v", err)
 	}
 
 	cleaner, err := binary.RunBinary(c.binaryPath, c.logsPath)
 	if err != nil {
-		return err
+		log.Fatalf("Failed to run binary: %v", err)
 	}
 	defer cleaner()
 
-	if err := waitForAll(ctx, c.checks...); err != nil {
-		return err
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
 
-	for _, fn := range c.beforeRun {
-		if err := fn(); err != nil {
-			return err
-		}
+	if err := waitForAll(ctx, readiness); err != nil {
+		log.Fatalf("Failed to check readiness: %v", err)
 	}
 
 	c.m.Run()
-
-	return nil
 }
 
 func waitForAll(ctx context.Context, checks ...checker) error {
