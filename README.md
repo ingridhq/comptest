@@ -23,13 +23,19 @@ And start using it:
 ```go
 func TestMain(t *testing.M) {
 	// Initialize comptest lib.
-	c := comptest.New(t)
+	
+	ctx, cancel := context.WithTimeout(context.Background(), 40 * time.Second)
+	defer cancel()
+	
+	c := comptest.New(ctx)
 	
 	c.HealthChecks(
 		waitfor.TCP(os.Getenv("PUBSUB_EMULATOR_HOST")),
 	)
 	
 	c.BuildAndRun("../main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.ReadinessPort)))
+	
+	t.Run()
 }
 
 func Test_response(t *testing.T) {
