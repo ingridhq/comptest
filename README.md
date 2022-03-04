@@ -22,17 +22,14 @@ And start using it:
 
 ```go
 func TestMain(t *testing.M) {
-	cleanUp := comptest.MustBuildAndRun("./main.go", "./main.bin", "./comptest.logs")
-	defer cleanUp()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := comptest.WaitForMainServer(ctx); err != nil {
-		cleanUp()
-		log.Fatalf("wait for main server failed: %v", err)
-	}
-
-	t.Run()
+	// Initialize comptest lib.
+	c := comptest.New(t)
+	
+	c.HealthChecks(
+		waitfor.TCP(os.Getenv("PUBSUB_EMULATOR_HOST")),
+	)
+	
+	c.BuildAndRun("../main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.ReadinessPort)))
 }
 
 func Test_response(t *testing.T) {
@@ -44,7 +41,7 @@ func Test_response(t *testing.T) {
 }
 ```
 
-Full examples can be found in `_example` directory. There you will learn how to use most of the package's functionality. You can run all examples with `make -s` or one by one by calling `make -s` in each subdirectory.
+Full examples can be found in `_example` directory. There you will learn how to use most of the package's functionality. You can run all examples with `make -s` or one by one, by calling `make -s` in each subdirectory.
 
 ---
 

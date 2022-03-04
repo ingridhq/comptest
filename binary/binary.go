@@ -1,4 +1,4 @@
-package comptest
+package binary
 
 import (
 	"fmt"
@@ -13,11 +13,11 @@ func RunBinary(pathToBinary string, pathToLogs string) (func(), error) {
 	cmd := exec.Command(pathToBinary)
 	outfile, err := os.Create(pathToLogs)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't create file: %v", err)
+		return nil, fmt.Errorf("couldn't create file: %w", err)
 	}
 	cmd.Stdout, cmd.Stderr = outfile, outfile
 	if err = cmd.Start(); err != nil {
-		return nil, fmt.Errorf("couldn't start grpc server: %v", err)
+		return nil, fmt.Errorf("couldn't start grpc server: %w", err)
 	}
 
 	// closed indicates if "we" called closed function. Concurrent access is synchronized using closedMtx.
@@ -41,7 +41,7 @@ func RunBinary(pathToBinary string, pathToLogs string) (func(), error) {
 
 			// At this point we don't have access to *testing.T.
 			// Therefore the only thing we can do is panic using log.Fatal.
-			log.Fatalf("child process %q exited before it was closed by tests: %v", pathToBinary, err)
+			log.Fatalf("child process %q exited before it was closed by tests: %v\n", pathToBinary, err)
 		}
 	}()
 
@@ -59,32 +59,11 @@ func RunBinary(pathToBinary string, pathToLogs string) (func(), error) {
 	}, nil
 }
 
-func MustRunBinary(pathToBinary string, pathToLogs string) func() {
-	clean, err := RunBinary(pathToBinary, pathToLogs)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return clean
-}
-
 // BuildBinary will build golang application.
-func BuildBinary(pathToGoMain string, pathToBinary string) error {
+func BuildBinary(pathToGoMain, pathToBinary string) error {
 	cmd := exec.Command("go", "build", "-o", pathToBinary, pathToGoMain)
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("couldn't build go app: %v", err)
+		return fmt.Errorf("couldn't build go app: %w", err)
 	}
 	return nil
-}
-
-func MustBuildBinary(pathToGoMain string, pathToBinary string) {
-	if err := BuildBinary(pathToGoMain, pathToBinary); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// MustBuildAndRun will build and run golang app in a background.
-// Returns clean function that should be deferred.
-func MustBuildAndRun(pathToGoMain, pathToBinary, pathToLogs string) func() {
-	MustBuildBinary(pathToGoMain, pathToBinary)
-	return MustRunBinary(pathToBinary, pathToLogs)
 }

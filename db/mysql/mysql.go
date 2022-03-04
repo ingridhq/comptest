@@ -7,22 +7,20 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/ingridhq/comptest/db/dbutil"
 	"github.com/jmoiron/sqlx"
-
-	"github.com/ingridhq/comptest"
 )
 
 const schema = "mysql"
-
-var _ comptest.HealthCheck = database{}
 
 type database struct {
 	dsn string
 }
 
+// Database create MySQL suite for database initialization.
 func Database(dsn string) *database {
 	return &database{dsn: dsn}
 }
 
+// Check implements checker interface for convenient use in HealthChecks function.
 func (c database) Check(ctx context.Context) error {
 	db, err := sqlx.ConnectContext(ctx, schema, c.dsn)
 	if err != nil {
@@ -32,21 +30,19 @@ func (c database) Check(ctx context.Context) error {
 	return nil
 }
 
+// RunUpMigrations runs UP migrations from source.
 func (c database) RunUpMigrations(migrationsSource string) error {
 	return dbutil.RunUpMigrations(migrationsSource, fmt.Sprintf("%s://%s", schema, c.dsn))
 }
 
+// RunDownMigrations runs DOWN migrations from source.
 func (c database) RunDownMigrations(migrationsSource string) error {
 	return dbutil.RunDownMigrations(migrationsSource, fmt.Sprintf("%s://%s", schema, c.dsn))
 }
 
-// CreateDatabase will wait for db connection. You don't have to use WaitForAll() before CreateDatabase()
+// CreateDatabase creates database extracted from DSN.
 func (c database) CreateDatabase(ctx context.Context, dsn string) error {
 	dbbase, dbname := dbutil.SplitDSN(dsn)
-
-	if err := comptest.WaitForAll(ctx, c); err != nil {
-		return err
-	}
 
 	db, err := sqlx.ConnectContext(ctx, "mysql", dbbase+"/")
 	if err != nil {

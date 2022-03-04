@@ -8,37 +8,41 @@ import (
 	"strings"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/jmoiron/sqlx"
-
-	"github.com/ingridhq/comptest"
 	"github.com/ingridhq/comptest/db/dbutil"
+	"github.com/jmoiron/sqlx"
 )
 
 const schema = "postgres"
-
-var _ comptest.HealthCheck = database{}
 
 type database struct {
 	dsn string
 }
 
+// Database create Postgresql suite for database initialization.
 func Database(dsn string) *database {
 	return &database{dsn: dsn}
 }
 
+// Check implements checker interface for convenient use in HealthChecks function.
 func (c database) Check(ctx context.Context) error {
-	db, err := sqlx.ConnectContext(ctx, schema, prepareDSN(c.dsn))
+	conninfo, _ := dbutil.SplitDSN(c.dsn)
+	conninfo = fmt.Sprintf("%s/postgres?sslmode=disable", conninfo)
+
+	db, err := sqlx.ConnectContext(ctx, schema, prepareDSN(conninfo))
 	if err != nil {
 		return fmt.Errorf("failed to connect to DB: %w", err)
 	}
+
 	db.Close()
 	return nil
 }
 
+// RunUpMigrations runs UP migrations from source.
 func (c database) RunUpMigrations(migrationsSource string) error {
 	return dbutil.RunUpMigrations(migrationsSource, prepareDSN(c.dsn))
 }
 
+// RunDownMigrations runs DOWN migrations from source.
 func (c database) RunDownMigrations(migrationsSource string) error {
 	return dbutil.RunDownMigrations(migrationsSource, prepareDSN(c.dsn))
 }
@@ -50,16 +54,10 @@ func prepareDSN(dsn string) string {
 	return fmt.Sprintf("%s://%s", schema, dsn)
 }
 
-// CreateDatabase will wait for db connection. You don't have to use WaitForAll() before CreateDatabase()
+// CreateDatabase creates database extracted from DSN.
 func (c database) CreateDatabase(ctx context.Context) error {
 	conninfo, dbname := dbutil.SplitDSN(c.dsn)
 	conninfo = fmt.Sprintf("%s/postgres?sslmode=disable", conninfo)
-
-	// Wait for postgres database
-	postgresDB := Database(conninfo)
-	if err := comptest.WaitForAll(ctx, postgresDB); err != nil {
-		return err
-	}
 
 	// Connect to postgres database, to create new db. Sqlx require connection to database.
 	db, err := sqlx.ConnectContext(ctx, schema, conninfo)
