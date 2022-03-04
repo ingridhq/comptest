@@ -2,9 +2,9 @@ package comptest
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ingridhq/comptest/binary"
@@ -18,18 +18,18 @@ type checker interface {
 type CleanupFunc func()
 
 type comptest struct {
-	timeout time.Duration
+	ctx context.Context
 
 	binaryPath string
 	logsPath   string
 }
 
 // New create new comptests suite.
-func New() *comptest {
+func New(ctx context.Context) *comptest {
 	return &comptest{
 		binaryPath: os.TempDir() + "/main",
-		logsPath:   "./comptest.logs",
-		timeout:    30 * time.Second,
+		logsPath:   "./comptest.log",
+		ctx:        ctx,
 	}
 }
 
@@ -45,10 +45,7 @@ func (c *comptest) SetLogsPath(logsPath string) {
 
 // HealthChecks waits for external dependencies (PubSubs, Databases, GRPC mocks) to be ready.
 func (c *comptest) HealthChecks(checks ...checker) {
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	if err := waitForAll(ctx, checks...); err != nil {
+	if err := waitForAll(c.ctx, checks...); err != nil {
 		log.Fatalf("Failed to check external dependencies: %v", err)
 	}
 }
@@ -65,10 +62,7 @@ func (c *comptest) BuildAndRun(buildPath string, readiness checker) CleanupFunc 
 		log.Fatalf("Failed to run binary: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	if err := waitForAll(ctx, readiness); err != nil {
+	if err := waitForAll(c.ctx, readiness); err != nil {
 		cleaner()
 		log.Fatalf("Failed to check readiness: %v", err)
 	}
@@ -82,23 +76,23 @@ func waitForAll(ctx context.Context, checks ...checker) error {
 		c := c
 		g.Go(func() error {
 			return backoff.Retry(func() error {
-				return c.Check(ctx)
-			}, newExponentialBackOff(ctx))
+				err := c.Check(ctx)
+
+				select {
+				case <-ctx.Done():
+					if err != nil {
+						return backoff.Permanent(fmt.Errorf("check %v failed: %w", c, err))
+					}
+					return nil
+				default:
+					if err != nil {
+						return fmt.Errorf("check %v failed: %w", c, err)
+					}
+					return nil
+				}
+			}, backoff.NewExponentialBackOff())
 		})
 	}
-	return g.Wait()
-}
 
-func newExponentialBackOff(ctx context.Context) backoff.BackOffContext {
-	b := &backoff.ExponentialBackOff{
-		InitialInterval:     10 * time.Millisecond,
-		RandomizationFactor: backoff.DefaultRandomizationFactor,
-		Multiplier:          backoff.DefaultMultiplier,
-		MaxInterval:         time.Second,
-		MaxElapsedTime:      backoff.DefaultMaxElapsedTime,
-		Stop:                backoff.Stop,
-		Clock:               backoff.SystemClock,
-	}
-	b.Reset()
-	return backoff.WithContext(b, ctx)
+	return g.Wait()
 }

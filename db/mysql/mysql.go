@@ -20,6 +20,10 @@ func Database(dsn string) *database {
 	return &database{dsn: dsn}
 }
 
+func (c database) String() string {
+	return fmt.Sprintf("[MySQL: %s]", c.dsn)
+}
+
 // Check implements checker interface for convenient use in HealthChecks function.
 func (c database) Check(ctx context.Context) error {
 	db, err := sqlx.ConnectContext(ctx, schema, c.dsn)
