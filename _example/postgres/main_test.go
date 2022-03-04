@@ -1,18 +1,14 @@
 package comptest
 
 import (
-	"context"
 	"log"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/ingridhq/comptest"
 	"github.com/ingridhq/comptest/db/postgres"
-
-		ctpubsub "github.com/ingridhq/comptest/pubsub"
 )
 
 type config struct {
