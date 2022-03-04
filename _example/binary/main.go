@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/jmoiron/sqlx"
 	"github.com/kelseyhightower/envconfig"
+	_ "github.com/lib/pq"
 
 	ctpubsub "github.com/ingridhq/comptest/pubsub"
 )
@@ -26,12 +28,23 @@ type Config struct {
 
 	PubSubTopicSend        string `envconfig:"PUBSUB_TOPIC_SEND"`
 	PubSubSubscriptionSend string `envconfig:"PUBSUB_SUBSCRIPTION_SEND"`
+
+	DBPostgresDSN string `envconfig:"DB_POSTGRES_DSN"`
 }
 
 func main() {
 	log.Println("START")
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
+
+	dbConn, err := sqlx.ConnectContext(context.Background(), "postgres", cfg.DBPostgresDSN)
+	if err != nil {
+		log.Fatalf("failed to connect to DB: %v", err)
+	}
+
+	if err := dbConn.Ping(); err != nil {
+		log.Fatalf("failed to ping DB: %v", err)
+	}
 
 	sender := ctpubsub.MustSetupTopic(context.Background(), cfg.PubSubProjectID, cfg.PubSubTopicSend, cfg.PubSubSubscriptionSend)
 

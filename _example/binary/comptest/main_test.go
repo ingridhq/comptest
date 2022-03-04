@@ -1,23 +1,37 @@
-package main
+package comptest
 
 import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/kelseyhightower/envconfig"
-
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/ingridhq/comptest"
+	cppostgres "github.com/ingridhq/comptest/db/postgres"
 	ctpubsub "github.com/ingridhq/comptest/pubsub"
 	"github.com/ingridhq/comptest/waitfor"
+	"github.com/kelseyhightower/envconfig"
 )
 
-var cfg Config
+var cfg struct {
+	Port       string `envconfig:"PORT"`
+	MetricPort string `envconfig:"METRICS_ADDR"`
+
+	PubSubProjectID            string `envconfig:"PUBSUB_PROJECT_ID" default:"comptest-pubsub"`
+	PubSubTopicReceived        string `envconfig:"PUBSUB_TOPIC_RECEIVED"`
+	PubSubSubscriptionReceived string `envconfig:"PUBSUB_SUBSCRIPTION_RECEIVED"`
+
+	PubSubTopicSend        string `envconfig:"PUBSUB_TOPIC_SEND"`
+	PubSubSubscriptionSend string `envconfig:"PUBSUB_SUBSCRIPTION_SEND"`
+
+	DBPostgresDSN string `envconfig:"DB_POSTGRES_DSN"`
+}
 
 type Environment struct {
 	Sender   *pubsub.Topic
@@ -31,22 +45,35 @@ func TestMain(t *testing.M) {
 		return
 	}
 
+	envconfig.MustProcess("", &cfg)
+
 	c := comptest.New(t)
+
+	postgresDB := cppostgres.Database(cfg.DBPostgresDSN)
+
 	c.HealthChecks(
+		postgresDB,
 		waitfor.TCP(os.Getenv("PUBSUB_EMULATOR_HOST")),
 	)
 
-	envconfig.MustProcess("", &cfg)
+	// Setting up all dependencies needed in tests...
+
+	if err := postgresDB.CreateDatabase(context.Background()); err != nil {
+		log.Fatalf("could not create database: %v", err)
+	}
+
+	if err := postgresDB.RunDownMigrations("file://../migrations/"); err != nil {
+		log.Fatalf("Failed to run down migration: %v", err)
+	}
+	if err := postgresDB.RunUpMigrations("file://../migrations/"); err != nil {
+		log.Fatalf("Failed to run up migration: %v", err)
+	}
 
 	sender := ctpubsub.MustSetupTopic(context.Background(), cfg.PubSubProjectID, cfg.PubSubTopicReceived, cfg.PubSubSubscriptionReceived)
 	ctpubsub.MustSetupTopic(context.Background(), cfg.PubSubProjectID, cfg.PubSubTopicSend, cfg.PubSubSubscriptionSend)
 
 	receiver := make(chan *pubsub.Message)
-	ctpubsub.MustSetupSubscription(
-		context.Background(),
-		cfg.PubSubProjectID,
-		cfg.PubSubTopicSend,
-		cfg.PubSubSubscriptionSend,
+	ctpubsub.MustSetupSubscription(context.Background(), cfg.PubSubProjectID, cfg.PubSubTopicSend, cfg.PubSubSubscriptionSend,
 		func(ctx context.Context, message *pubsub.Message) {
 			receiver <- message
 		},
@@ -57,7 +84,7 @@ func TestMain(t *testing.M) {
 		Receiver: receiver,
 	}
 
-	c.BuildAndRun("main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.MetricPort)))
+	c.BuildAndRun("../main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.MetricPort)))
 }
 
 func Test_HTTP(t *testing.T) {

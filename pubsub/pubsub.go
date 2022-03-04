@@ -36,7 +36,7 @@ func MustSetupTopic(ctx context.Context, project, topicID string, subIDs ...stri
 	return t
 }
 
-// MustSetupPubSubReceiver is used to create PubSub receiver.
+// MustSetupSubscription is used to create PubSub receiver.
 // User must ensure that topic is created.
 func MustSetupSubscription(ctx context.Context, projectID, topicID, subID string, cb func(context.Context, *pubsub.Message)) {
 	r, err := newSubscription(ctx, projectID, topicID, subID)
@@ -52,7 +52,7 @@ func MustSetupSubscription(ctx context.Context, projectID, topicID, subID string
 	}()
 }
 
-//MustPublishPubsubMsg is a helper function used to send custom PubSub message.
+// MustPublishPubsubMsg is a helper function used to send custom PubSub message.
 func MustPublishPubsubMsg(t *testing.T, ctx context.Context, s *pubsub.Topic, msg proto.Message) {
 	res := s.Publish(ctx, &pubsub.Message{
 		Data: []byte(msg.String()),
