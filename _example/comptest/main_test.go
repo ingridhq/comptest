@@ -48,7 +48,7 @@ func TestMain(t *testing.M) {
 	envconfig.MustProcess("", &cfg)
 
 	// Initialize comptest lib.
-	c := comptest.New(t)
+	c := comptest.New()
 
 	postgresDB := cppostgres.Database(cfg.DBPostgresDSN)
 
@@ -79,13 +79,17 @@ func TestMain(t *testing.M) {
 		},
 	)
 
+	// Build, run, wait for service and run tests...
+	cleanup := c.BuildAndRun("../main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.MetricPort)))
+	defer cleanup()
+
 	env = Environment{
 		Sender:   sender,
 		Receiver: receiver,
+		// or connection to freshly ran service.
 	}
 
-	// Build, run, wait for service and run tests...
-	c.BuildAndRun("../main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.MetricPort)))
+	t.Run()
 }
 
 func Test_HTTP(t *testing.T) {
