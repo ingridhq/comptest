@@ -30,4 +30,4 @@ jobs:
         with:
           go-version: 1.16.0
       - name: Run Tests
-        run: make -s
+        run: cd example; make all

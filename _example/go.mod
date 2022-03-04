@@ -1,8 +1,8 @@
-module github.com/ingridhq/comptest/_example/binary
+module github.com/ingridhq/comptest/_example
 
 go 1.16
 
-replace github.com/ingridhq/comptest => ../../
+replace github.com/ingridhq/comptest => ../
 
 require (
 	cloud.google.com/go/pubsub v1.18.0
