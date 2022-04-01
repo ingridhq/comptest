@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 // RunUpMigrations will run all up migrations.

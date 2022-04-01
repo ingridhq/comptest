@@ -54,7 +54,7 @@ func (c database) CreateDatabase(ctx context.Context, dsn string) error {
 	}
 	defer db.Close()
 
-	_, err = db.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS ?", dbname)
+	_, err = db.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbname))
 	if err != nil {
 		return fmt.Errorf("failed to create database %q: %w", dbname, err)
 	}
