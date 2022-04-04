@@ -6,6 +6,10 @@ import (
 	"net"
 	"strings"
 
+	"cloud.google.com/go/pubsub"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/any"
 	"google.golang.org/grpc"
 )
 
@@ -59,4 +63,18 @@ func getOptionsFromAddress(addr string) []grpc.DialOption {
 	}
 
 	return connOpts
+}
+
+func PubsubMessageToProtoMessage(m *pubsub.Message) (ptypes.DynamicAny, error) {
+	a := &any.Any{}
+	if err := proto.Unmarshal(m.Data, a); err != nil {
+		return ptypes.DynamicAny{}, fmt.Errorf("could not unmarshall message: %w", err)
+	}
+
+	da := ptypes.DynamicAny{}
+	if err := ptypes.UnmarshalAny(a, &da); err != nil {
+		return ptypes.DynamicAny{}, fmt.Errorf("could not unmarshall any: %w", err)
+	}
+
+	return da, nil
 }
