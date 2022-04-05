@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"testing"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/golang/protobuf/proto"
 )
 
 func SetupTopic(ctx context.Context, project, topicID string, subIDs ...string) (*pubsub.Topic, error) {
@@ -50,15 +48,4 @@ func MustSetupSubscription(ctx context.Context, projectID, topicID, subID string
 			log.Fatalf("Failed to start receiver for topic %q: %v", topicID, err)
 		}
 	}()
-}
-
-// MustPublishPubsubMsg is a helper function used to send custom PubSub message.
-func MustPublishPubsubMsg(t *testing.T, ctx context.Context, s *pubsub.Topic, msg proto.Message) {
-	res := s.Publish(ctx, &pubsub.Message{
-		Data: []byte(msg.String()),
-	})
-	_, err := res.Get(ctx)
-	if err != nil {
-		t.Fatalf("Failed to publish message to pubsub: %v", err)
-	}
 }

@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/pubsub v1.3.1
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/golang-migrate/migrate/v4 v4.14.1
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jmoiron/sqlx v1.3.3
 	golang.org/x/mod v0.4.1 // indirect
 	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3 // indirect
