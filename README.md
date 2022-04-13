@@ -23,18 +23,18 @@ And start using it:
 ```go
 func TestMain(t *testing.M) {
 	// Initialize comptest lib.
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 40 * time.Second)
 	defer cancel()
-	
+
 	c := comptest.New(ctx)
-	
+
 	c.HealthChecks(
 		waitfor.TCP(os.Getenv("PUBSUB_EMULATOR_HOST")),
 	)
-	
+
 	c.BuildAndRun("../main.go", waitfor.HTTP(fmt.Sprintf("http://%s/readiness", cfg.ReadinessPort)))
-	
+
 	t.Run()
 }
 
@@ -47,7 +47,7 @@ func Test_response(t *testing.T) {
 }
 ```
 
-Full examples can be found in `_example` directory. There you will learn how to use most of the package's functionality. You can run all examples with `make -s` or one by one, by calling `make -s` in each subdirectory.
+Full example can be found in `_example` directory. There you will learn how to use most of the package's functionality. You can run it with `make`.
 
 ---
 
