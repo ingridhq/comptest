@@ -5,11 +5,18 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
+
+	"github.com/mitchellh/go-ps"
 )
 
 // RunBinary will run golang app in a background. Returns clean function
 func RunBinary(pathToBinary string, pathToLogs string) (func(), error) {
+	if err := checkIfBinaryAlreadyRunning(pathToBinary); err != nil {
+		return nil, fmt.Errorf("binary already running: %w", err)
+	}
+
 	cmd := exec.Command(pathToBinary)
 	outfile, err := os.Create(pathToLogs)
 	if err != nil {
@@ -64,6 +71,20 @@ func BuildBinary(pathToGoMain, pathToBinary string) error {
 	cmd := exec.Command("go", "build", "-o", pathToBinary, pathToGoMain)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("couldn't build go app: %w", err)
+	}
+	return nil
+}
+
+func checkIfBinaryAlreadyRunning(pathToBinary string) error {
+	binaryName := filepath.Base(pathToBinary)
+	processes, err := ps.Processes()
+	if err != nil {
+		return fmt.Errorf("couldn't get list of processes: %v", err)
+	}
+	for _, p := range processes {
+		if p.Executable() == binaryName {
+			return fmt.Errorf("binary %v is already running at PID %d", p.Executable(), p.Pid())
+		}
 	}
 	return nil
 }

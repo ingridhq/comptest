@@ -14,6 +14,5 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.8.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
-	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/api v0.70.0 // indirect
 )
