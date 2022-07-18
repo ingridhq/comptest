@@ -63,7 +63,7 @@ func (c *comptest) BuildAndRun(buildPath string, readiness checker) CleanupFunc 
 // Runs binary, waits for readiness check and runs tests.
 // Returns cleanup function that needs to be invoked after tests.
 func (c *comptest) Run(runPath string, readiness checker) CleanupFunc {
-	cleaner, err := binary.RunBinary(c.binaryPath, c.logsPath)
+	cleaner, err := binary.RunBinary(runPath, c.logsPath)
 	if err != nil {
 		log.Fatalf("Failed to run binary: %v", err)
 	}
